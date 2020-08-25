@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp">
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="22dp"
+        android:textAlignment="center"
+        android:textColor="@color/titleDialog"
+        android:text="Nombre"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:textColor="@color/textDialog"
+        android:textSize="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_height="wrap_content"
+        android:text="Bicicletas disponibles"/>
+    <TextView
+        android:id="@+id/free_bikes"
+        android:layout_width="match_parent"
+        android:layout_marginLeft="20dp"
+        android:textStyle="bold"
+        android:textColor="@color/textDialog"
+        android:layout_height="wrap_content"
+        android:text="Bicicletas disponibles"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:textColor="@color/textDialog"
+        android:textSize="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_height="wrap_content"
+        android:text="Espacios vacios"/>
+
+    <TextView
+        android:id="@+id/empty_slots"
+        android:textColor="@color/textDialog"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Espacios vacios"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:textColor="@color/textDialog"
+        android:textSize="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_height="wrap_content"
+        android:text="Dirección"/>
+
+    <TextView
+        android:id="@+id/address"
+        android:layout_marginLeft="20dp"
+        android:textColor="@color/textDialog"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dirección"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:textColor="@color/textDialog"
+        android:textSize="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_height="wrap_content"
+        android:text="Última actualización"/>
+
+    <TextView
+        android:id="@+id/timestamp"
+        android:layout_marginLeft="20dp"
+        android:textColor="@color/textDialog"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Última actualización"/>
+
+    <Button
+        android:layout_marginTop="10dp"
+        android:id="@+id/openWaze"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFF"
+        android:background="@color/colorPrimaryDark"
+        android:text="Abrir con Waze"
+        android:textAllCaps="false"/>
+
+
+</LinearLayout>

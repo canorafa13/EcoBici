@@ -3,20 +3,23 @@ package com.example.ecobici;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
-
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.AsyncTask;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
-
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import com.example.ecobici.connection.FetchData;
 import com.example.ecobici.classes.CONST;
-import com.example.ecobici.classes.EcoBici;
-import com.example.ecobici.classes.Network;
-
+import com.example.ecobici.classes.Stations;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -25,70 +28,78 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.gson.Gson;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, LocationListener {
     private GoogleMap mMap;
     private LocationManager locManager;
     private Marker current;
-    private EcoBici ecoBici;
+    private FetchData fetchData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+        //Fragmento del Google Maps
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        new FetchWeatherData().execute();
 
+
+        //Solicitud de Permisos
         ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         if (!(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)){
             locManager = (LocationManager) getSystemService(getApplicationContext().LOCATION_SERVICE);
             locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0, this);
-
         }
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setMinZoomPreference(11);
+        //Zoom minimo de 13
+        mMap.setMinZoomPreference(13);
+        //Posición inicial en CDMX
+        LatLng cdmx = new LatLng(19.4326077, -99.133208);
 
-
-        // Add a marker in Sydney and move the camera
-        LatLng cdmx = new LatLng(-19.501868440937653, -99.09765646478658);
+        ///Añadir mi posición
         current = mMap.addMarker(
                 new MarkerOptions()
                         .position(cdmx)
                         .title("Mi posición")
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_current))
             );
+        //Move la cámara a la posición de la CDMX
         mMap.moveCamera(CameraUpdateFactory.newLatLng(cdmx));
+
+        //Escuchar cuando se presiona un Marker
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                if(!marker.getId().equals("m0")){
+                    //Parseo el Objeto Station que tiene el Marker
+                    Stations station = (Stations) marker.getTag();
+                    //Se abre la ventana de información
+                    openInfoWindow(station);
+                }
+                return false;
+            }
+        });
+
+        /// Obtener los datos de EcoBICI
+        fetchData = new FetchData();
+        fetchData.setmMap(mMap);
+        fetchData.execute();
     }
+
+
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
+        //Actualizar mi posición, cada vez que cambia
         LatLng updateLocation = new LatLng(location.getLatitude(), location.getLongitude());
         current.setPosition(updateLocation);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(updateLocation));
     }
 
     @Override
@@ -106,66 +117,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    private class FetchWeatherData extends AsyncTask<Void, Void, String> {
-        @Override
-        protected String doInBackground(Void... params) {
-            HttpURLConnection urlConnection = null;
-            BufferedReader reader = null;
-            String forecastJsonStr = null;
-            try {
-                URL url = new URL(CONST.server);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    return null;
-                }
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line + "\n");
-                }
 
-                if (buffer.length() == 0) {
-                    return null;
-                }
-                forecastJsonStr = buffer.toString();
-                return forecastJsonStr;
-            } catch (IOException e) {
-                Log.e("PlaceholderFragment", "Error ", e);
-                return null;
-            } finally{
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e("PlaceholderFragment", "Error closing stream", e);
+    public void openInfoWindow(final Stations station){
+        /// Se muestra la pantalla de información
+        final AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        LayoutInflater inflater = MapsActivity.this.getLayoutInflater();
+
+        View v = inflater.inflate(R.layout.dialog_fragment, null);
+
+        builder.setView(v);
+
+        final AlertDialog dialog = builder.create();
+        dialog.show();
+        Button openWaze = (Button) v.findViewById(R.id.openWaze);
+        TextView  name = (TextView) v.findViewById(R.id.name);
+        TextView free_bikes = (TextView) v.findViewById(R.id.free_bikes);
+        TextView address = (TextView) v.findViewById(R.id.address);
+        TextView empty_slots = (TextView) v.findViewById(R.id.empty_slots);
+        TextView timestamp = (TextView) v.findViewById(R.id.timestamp);
+        name.setText(station.getName());
+        free_bikes.setText(station.getFree_bikes() + "");
+        empty_slots.setText(station.getEmpty_slots() + "");
+        timestamp.setText(station.getTimestamp().substring(0, 19));
+        address.setText(station.getExtra().getAddress() + ", C. P. " + station.getExtra().getZip());
+        openWaze.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Se intenta abrir una navegación con Waze
+                        try{
+                            String url = CONST.serve_waze + "?q=" + station.getExtra().getAddress() + "&ll=" + station.getLatitude() + "," + station.getLongitude() +"&navigate=yes";
+                            Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse( url ) );
+                            startActivity( intent );
+                        }catch ( ActivityNotFoundException ex  ){
+                            Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse( "market://details?id=com.waze" ) );
+                            startActivity(intent);
+                        }
                     }
                 }
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-
-            try{
-                ecoBici = new Gson().fromJson(s, EcoBici.class);
-                setStationsOnMap();
-            }catch (Exception e){
-
-            }
-        }
-
-        public void setStationsOnMap(){
-
-        }
+        );
     }
-
 
 }
