@@ -1,25 +1,26 @@
-package com.example.ecobici;
+package com.example.ecobici.views;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import com.example.ecobici.connection.FetchData;
+import android.widget.Toast;
+import com.example.ecobici.R;
 import com.example.ecobici.classes.CONST;
 import com.example.ecobici.classes.Stations;
+import com.example.ecobici.controllers.MapsActivityController;
+import com.example.ecobici.interfaces.MapsActivity;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -29,21 +30,28 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, LocationListener {
+import java.util.ArrayList;
+
+public class MapsActivityView extends FragmentActivity implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, LocationListener, MapsActivity.View {
     private GoogleMap mMap;
     private LocationManager locManager;
     private Marker current;
-    private FetchData fetchData;
+    private MapsActivity.Controller controller;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        //Controlador de la actividad
+        controller = new MapsActivityController(this);
+        controller.getData();
 
         //Fragmento del Google Maps
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+
 
 
         //Solicitud de Permisos
@@ -86,11 +94,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return false;
             }
         });
-
-        /// Obtener los datos de EcoBICI
-        fetchData = new FetchData();
-        fetchData.setmMap(mMap);
-        fetchData.execute();
     }
 
 
@@ -120,8 +123,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void openInfoWindow(final Stations station){
         /// Se muestra la pantalla de información
-        final AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-        LayoutInflater inflater = MapsActivity.this.getLayoutInflater();
+        final AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivityView.this);
+        LayoutInflater inflater = MapsActivityView.this.getLayoutInflater();
 
         View v = inflater.inflate(R.layout.dialog_fragment, null);
 
@@ -145,17 +148,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onClick(View v) {
                         // Se intenta abrir una navegación con Waze
-                        try{
-                            String url = CONST.serve_waze + "?q=" + station.getExtra().getAddress() + "&ll=" + station.getLatitude() + "," + station.getLongitude() +"&navigate=yes";
-                            Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse( url ) );
-                            startActivity( intent );
-                        }catch ( ActivityNotFoundException ex  ){
-                            Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse( "market://details?id=com.waze" ) );
-                            startActivity(intent);
-                        }
+                        String url = CONST.serve_waze + "?q=" + station.getExtra().getAddress() + "&ll=" + station.getLatitude() + "," + station.getLongitude() +"&navigate=yes";
+                        controller.openWaze(url);
                     }
                 }
         );
     }
 
+    @Override
+    public void showMarkers(ArrayList<Stations> stations) {
+        for(int i = 0; i < stations.size(); i++){
+            //Se verifica que exitan bicicletas disponibles
+            int free_bikes = stations.get(i).getFree_bikes();
+            LatLng stationsLL = new LatLng(stations.get(i).getLatitude(), stations.get(i).getLongitude());
+            boolean visible = free_bikes >= 1 ? true : false;
+            int icon = free_bikes >= 1 ? R.drawable.available : R.drawable.notavailable;
+            //Añadimos el Marker al Mapa
+            mMap.addMarker(
+                    new MarkerOptions()
+                            .position(stationsLL)
+                            .icon(BitmapDescriptorFactory.fromResource(icon))
+                            .visible(visible)
+            ).setTag(stations.get(i));
+        }
+    }
+
+    @Override
+    public void showError(Exception e) {
+        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void setIntent(Intent intent){
+        startActivity(intent);
+    }
 }

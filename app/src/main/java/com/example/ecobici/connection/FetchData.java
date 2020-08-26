@@ -1,13 +1,9 @@
 package com.example.ecobici.connection;
 
 import android.os.AsyncTask;
-import com.example.ecobici.R;
 import com.example.ecobici.classes.CONST;
 import com.example.ecobici.classes.EcoBici;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.example.ecobici.classes.Stations;
 import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,12 +11,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
-public class FetchData extends AsyncTask<Void, Void, String> {
-    private GoogleMap mMap;
-    public void setmMap(GoogleMap mMap){
-        this.mMap = mMap;
-    }
+public abstract class FetchData extends AsyncTask<Void, Void, String> {
     @Override
     protected String doInBackground(Void... voids) {
         HttpURLConnection urlConnection = null;
@@ -72,28 +65,13 @@ public class FetchData extends AsyncTask<Void, Void, String> {
         try{
             //Parseamos el JSON a la clase EcoBici con Gson
             EcoBici ecoBici = new Gson().fromJson(s, EcoBici.class);
-            //Añadimos los Markers al Mapa
-            setStationsOnMap(ecoBici);
+            this.showStations(ecoBici.getNetwork().getStations());
         }catch (Exception e){
+            this.showError(e);
         }
     }
 
-    public void setStationsOnMap(EcoBici ecoBici){
-        int sizeStations = ecoBici.getNetwork().getStations().size();
-        for(int i = 0; i < sizeStations; i++){
-            //Se verifica que exitan bicicletas disponibles
-            int free_bikes = ecoBici.getNetwork().getStations().get(i).getFree_bikes();
-            LatLng stationsLL = new LatLng(ecoBici.getNetwork().getStations().get(i).getLatitude(), ecoBici.getNetwork().getStations().get(i).getLongitude());
-            boolean visible = free_bikes >= 1 ? true : false;
-            int icon = free_bikes >= 1 ? R.drawable.available : R.drawable.notavailable;
-            //Añadimos el Marker al Mapa
-            mMap.addMarker(
-                    new MarkerOptions()
-                            .position(stationsLL)
-                            .icon(BitmapDescriptorFactory.fromResource(icon))
-                            .visible(visible)
-            ).setTag(ecoBici.getNetwork().getStations().get(i));
-        }
+    public abstract void showStations(ArrayList<Stations> stations);
 
-    }
+    public abstract void showError(Exception e);
 }
