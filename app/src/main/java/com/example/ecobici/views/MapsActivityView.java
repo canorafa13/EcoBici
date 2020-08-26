@@ -162,14 +162,14 @@ public class MapsActivityView extends FragmentActivity implements OnMapReadyCall
             int free_bikes = stations.get(i).getFree_bikes();
             LatLng stationsLL = new LatLng(stations.get(i).getLatitude(), stations.get(i).getLongitude());
             boolean visible = free_bikes >= 1 ? true : false;
-            int icon = free_bikes >= 1 ? R.drawable.available : R.drawable.notavailable;
             //Añadimos el Marker al Mapa
-            mMap.addMarker(
-                    new MarkerOptions()
-                            .position(stationsLL)
-                            .icon(BitmapDescriptorFactory.fromResource(icon))
-                            .visible(visible)
-            ).setTag(stations.get(i));
+            if(visible){
+                mMap.addMarker(
+                        new MarkerOptions()
+                                .position(stationsLL)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.available))
+                ).setTag(stations.get(i));
+            }
         }
     }
 
