@@ -1,4 +1,4 @@
-package com.example.ecobici;
+package com.ecobici.app;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.example.ecobici.classes;
+package com.ecobici.app.classes;
 
 public class Extra {
     private int[] NearbyStationList;

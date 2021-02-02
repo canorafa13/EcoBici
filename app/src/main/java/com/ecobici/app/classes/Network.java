@@ -1,4 +1,4 @@
-package com.example.ecobici.classes;
+package com.ecobici.app.classes;
 
 import java.util.ArrayList;
 

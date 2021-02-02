@@ -1,4 +1,4 @@
-package com.example.ecobici.classes;
+package com.ecobici.app.classes;
 
 public interface CONST {
     public final static String server = "http://api.citybik.es/v2/networks/ecobici";

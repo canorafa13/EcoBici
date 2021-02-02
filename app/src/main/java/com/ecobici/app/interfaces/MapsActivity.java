@@ -1,8 +1,8 @@
-package com.example.ecobici.interfaces;
+package com.ecobici.app.interfaces;
 
 import android.content.Intent;
 
-import com.example.ecobici.classes.Stations;
+import com.ecobici.app.classes.Stations;
 
 import java.util.ArrayList;
 

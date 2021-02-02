@@ -1,9 +1,10 @@
-package com.example.ecobici.connection;
+package com.ecobici.app.connection;
 
 import android.os.AsyncTask;
-import com.example.ecobici.classes.CONST;
-import com.example.ecobici.classes.EcoBici;
-import com.example.ecobici.classes.Stations;
+
+import com.ecobici.app.classes.CONST;
+import com.ecobici.app.classes.Stations;
+import com.ecobici.app.classes.EcoBici;
 import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.IOException;

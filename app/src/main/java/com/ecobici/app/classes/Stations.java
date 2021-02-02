@@ -1,4 +1,4 @@
-package com.example.ecobici.classes;
+package com.ecobici.app.classes;
 
 public class Stations {
     private String id;

@@ -1,4 +1,4 @@
-package com.example.ecobici.views;
+package com.ecobici.app.views;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -16,11 +16,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.example.ecobici.R;
-import com.example.ecobici.classes.CONST;
-import com.example.ecobici.classes.Stations;
-import com.example.ecobici.controllers.MapsActivityController;
-import com.example.ecobici.interfaces.MapsActivity;
+import com.ecobici.app.R;
+import com.ecobici.app.classes.CONST;
+import com.ecobici.app.classes.Stations;
+import com.ecobici.app.controllers.MapsActivityController;
+import com.ecobici.app.interfaces.MapsActivity;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;

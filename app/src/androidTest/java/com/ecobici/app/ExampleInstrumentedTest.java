@@ -1,4 +1,4 @@
-package com.example.ecobici;
+package com.ecobici.app;
 
 import android.content.Context;
 

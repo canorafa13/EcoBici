@@ -1,12 +1,12 @@
-package com.example.ecobici.models;
+package com.ecobici.app.models;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 
-import com.example.ecobici.classes.Stations;
-import com.example.ecobici.connection.FetchData;
-import com.example.ecobici.interfaces.MapsActivity;
+import com.ecobici.app.classes.Stations;
+import com.ecobici.app.connection.FetchData;
+import com.ecobici.app.interfaces.MapsActivity;
 
 import java.util.ArrayList;
 

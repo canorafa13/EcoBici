@@ -1,10 +1,10 @@
-package com.example.ecobici.controllers;
+package com.ecobici.app.controllers;
 
 import android.content.Intent;
 
-import com.example.ecobici.classes.Stations;
-import com.example.ecobici.interfaces.MapsActivity;
-import com.example.ecobici.models.MapsActivityModel;
+import com.ecobici.app.classes.Stations;
+import com.ecobici.app.interfaces.MapsActivity;
+import com.ecobici.app.models.MapsActivityModel;
 
 import java.util.ArrayList;
 
