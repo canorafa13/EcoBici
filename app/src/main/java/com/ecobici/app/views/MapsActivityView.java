@@ -3,24 +3,22 @@ package com.ecobici.app.views;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
+
 import android.Manifest;
-import android.app.AlertDialog;
+import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 import com.ecobici.app.R;
-import com.ecobici.app.classes.CONST;
 import com.ecobici.app.classes.Stations;
-import com.ecobici.app.controllers.MapsActivityController;
-import com.ecobici.app.interfaces.MapsActivity;
+import com.ecobici.app.custom.DialogInfo;
+import com.ecobici.app.viewmodels.MapsViewModel;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -30,26 +28,26 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.util.ArrayList;
-
-public class MapsActivityView extends FragmentActivity implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, LocationListener, MapsActivity.View {
+public class MapsActivityView extends FragmentActivity implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, LocationListener, DialogInfo.Action{
     private GoogleMap mMap;
     private LocationManager locManager;
     private Marker current;
-    private MapsActivity.Controller controller;
+    private MapsViewModel mapsViewModel;
+    private DialogInfo dialogInfo;
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        //Controlador de la actividad
-        controller = new MapsActivityController(this);
-        controller.getData();
+        mapsViewModel = new MapsViewModel();
 
         //Fragmento del Google Maps
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        dialogInfo = new DialogInfo(this, this.getLayoutInflater(), this);
 
 
 
@@ -60,6 +58,26 @@ public class MapsActivityView extends FragmentActivity implements OnMapReadyCall
             locManager = (LocationManager) getSystemService(getApplicationContext().LOCATION_SERVICE);
             locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0, this);
         }
+
+        mapsViewModel.getStations().observe(this, stations -> {
+            for(int i = 0; i < stations.size(); i++){
+                //Se verifica que exitan bicicletas disponibles
+                int free_bikes = stations.get(i).getFree_bikes();
+                LatLng stationsLL = new LatLng(stations.get(i).getLatitude(), stations.get(i).getLongitude());
+                //Añadimos el Marker al Mapa
+                if(free_bikes >= 1){
+                    mMap.addMarker(
+                            new MarkerOptions()
+                                    .position(stationsLL)
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.available))
+                    ).setTag(stations.get(i));
+                }
+            }
+        });
+
+        mapsViewModel.getError().observe(this, error -> Toast.makeText(MapsActivityView.this, "Error: " + error, Toast.LENGTH_LONG).show());
+
+        mapsViewModel.getStations("ecobici");
     }
 
 
@@ -82,17 +100,15 @@ public class MapsActivityView extends FragmentActivity implements OnMapReadyCall
         mMap.moveCamera(CameraUpdateFactory.newLatLng(cdmx));
 
         //Escuchar cuando se presiona un Marker
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-                if(!marker.getId().equals("m0")){
-                    //Parseo el Objeto Station que tiene el Marker
-                    Stations station = (Stations) marker.getTag();
-                    //Se abre la ventana de información
-                    openInfoWindow(station);
-                }
-                return false;
+        mMap.setOnMarkerClickListener(marker -> {
+            if(!marker.getId().equals("m0")){
+                //Parseo el Objeto Station que tiene el Marker
+
+                Stations station = (Stations) marker.getTag();
+                //Se abre la ventana de información
+                dialogInfo.openInfoWindow(station);
             }
+            return false;
         });
     }
 
@@ -120,66 +136,12 @@ public class MapsActivityView extends FragmentActivity implements OnMapReadyCall
 
     }
 
-
-    public void openInfoWindow(final Stations station){
-        /// Se muestra la pantalla de información
-        final AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivityView.this);
-        LayoutInflater inflater = MapsActivityView.this.getLayoutInflater();
-
-        View v = inflater.inflate(R.layout.dialog_fragment, null);
-
-        builder.setView(v);
-
-        final AlertDialog dialog = builder.create();
-        dialog.show();
-        Button openWaze = (Button) v.findViewById(R.id.openWaze);
-        TextView  name = (TextView) v.findViewById(R.id.name);
-        TextView free_bikes = (TextView) v.findViewById(R.id.free_bikes);
-        TextView address = (TextView) v.findViewById(R.id.address);
-        TextView empty_slots = (TextView) v.findViewById(R.id.empty_slots);
-        TextView timestamp = (TextView) v.findViewById(R.id.timestamp);
-        name.setText(station.getName());
-        free_bikes.setText(station.getFree_bikes() + "");
-        empty_slots.setText(station.getEmpty_slots() + "");
-        timestamp.setText(station.getTimestamp().substring(0, 19));
-        address.setText(station.getExtra().getAddress() + ", C. P. " + station.getExtra().getZip());
-        openWaze.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        // Se intenta abrir una navegación con Waze
-                        String url = CONST.serve_waze + "?q=" + station.getExtra().getAddress() + "&ll=" + station.getLatitude() + "," + station.getLongitude() +"&navigate=yes";
-                        controller.openWaze(url);
-                    }
-                }
-        );
-    }
-
     @Override
-    public void showMarkers(ArrayList<Stations> stations) {
-        for(int i = 0; i < stations.size(); i++){
-            //Se verifica que exitan bicicletas disponibles
-            int free_bikes = stations.get(i).getFree_bikes();
-            LatLng stationsLL = new LatLng(stations.get(i).getLatitude(), stations.get(i).getLongitude());
-            boolean visible = free_bikes >= 1 ? true : false;
-            //Añadimos el Marker al Mapa
-            if(visible){
-                mMap.addMarker(
-                        new MarkerOptions()
-                                .position(stationsLL)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.available))
-                ).setTag(stations.get(i));
-            }
+    public void openWaze(@NonNull String... url) {
+        try{
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url[0])));
+        }catch ( ActivityNotFoundException ex  ){
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url[1])));
         }
-    }
-
-    @Override
-    public void showError(Exception e) {
-        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void setIntent(Intent intent){
-        startActivity(intent);
     }
 }
